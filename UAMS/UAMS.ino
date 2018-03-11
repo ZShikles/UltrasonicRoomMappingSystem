@@ -1,3 +1,5 @@
+#include <Stepper.h>
+
 #include <SD.h>
 #include <SPI.h>
 
@@ -7,16 +9,20 @@ long areas[3]={0,0,0};
 long distances[4]={0,0,0,0};
 long pos = 0;
 
-const int pingPin = 5;
+const int pingTRIG = 12;
+const int pingECHO=13;
 int messageFlag=0;
-const int button=4;
-const int button2=5;
-const int button3=6;
+const int button=6;
+const int button2=7;
+const int button3=8;
+
+#define STEPS 64
 
 int mode=0;
 
 void setup() {
   // put your setup code here, to run once:
+  Serial.begin(9600);
 
   //pin initialization;
   pinMode(button, INPUT);
@@ -26,7 +32,7 @@ void setup() {
   //initialize SD
   if (!SD.begin(10)) {
     Serial.println(F("Card Failed, or Not Present"));
-    exit;
+    //exit;
   }
   else{
     Serial.println("Card Initialized.");
@@ -34,7 +40,7 @@ void setup() {
 
   pinMode(10,OUTPUT);
   
-  motor_reset();
+
   systems_clear();
 }
 
@@ -79,13 +85,13 @@ void loop() {
 }
 
 void standard(){          //Normal functionality
-  delay(7000000);       //delays 7 seconds
+  //delay(7000000);       //delays 7 seconds
   for(int i=0; i<4; i++){
       get_distance(i);   //gets distance to object(wall)
       if (i<3){         //rotates motor once per cycle
           motor_rotate(i); 
       }
-      delay(7000000);   //waits 7 seconds  
+      //delay(7000000);   //waits 7 seconds  
     }
     
     calc_area();        //calculates area
@@ -104,7 +110,7 @@ void test1(){           //test procedure for sensor
       if(i<3){
         motor_rotate(i);
         Serial.println("Awaiting Button Push for Next State");
-        while(digitalRead(button2) == LOW){
+        while(digitalRead(button2) == HIGH){
         }     
       }   
   }
@@ -124,7 +130,7 @@ void test2(){           //test procedure for motor
     Serial.print(elapsedTime);
     Serial.println(" Milliseconds");
     Serial.println("Awaiting Button Push for Next Cycle");
-    while(digitalRead(button3)==LOW){
+    while(digitalRead(button3)==HIGH){
     }
   }
   systems_clear();
@@ -146,11 +152,17 @@ void systems_clear(){ //empties arrays
 
 void motor_reset(){
   //YET TO IMPLEMENT
+  Stepper stepper(STEPS, 2,3,4,5);
+  stepper.setSpeed(2);
+  stepper.step(-64);
   Serial.println("Motor position reset to position 1");
 }
 
 void motor_rotate(int i){
   //YET TO IMPLEMENT
+  Stepper stepper(STEPS, 2,3,4,5);
+  stepper.setSpeed(2);
+  stepper.step(16);
   Serial.print("Motor Rotated to position ");
   Serial.println(i+1);
 }
@@ -159,20 +171,21 @@ void get_distance(int i){  //gets distance to object in cm
   long duration;
   
   //Sends request to sensor
-  pinMode(pingPin, OUTPUT);
-  digitalWrite(pingPin, LOW);
+  pinMode(pingTRIG, OUTPUT);
+  digitalWrite(pingTRIG, LOW);
   delayMicroseconds(2);
-  digitalWrite(pingPin, HIGH);
-  delayMicroseconds(5);
-  digitalWrite(pingPin, LOW);
+  digitalWrite(pingTRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(pingTRIG, LOW);
 
-  pinMode(pingPin,INPUT); 
-  duration = pulseIn(pingPin,HIGH); //recieves return signal, calculates elapsed time
+  pinMode(pingECHO,INPUT); 
+  duration = pulseIn(pingECHO,HIGH); //recieves return signal, calculates elapsed time
   distances[i] = duration / 29 / 2;  //converts elapsed time to cm
 
   Serial.print("Distance ");
   Serial.print(i+1);
-  Serial.println(" Retrieved");
+  Serial.print(" is ");
+  Serial.println(distances[i]);
 }
 
 void calc_area(){
