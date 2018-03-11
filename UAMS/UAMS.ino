@@ -16,6 +16,12 @@ const int button=6;
 const int button2=7;
 const int button3=8;
 
+const int motPin1=2;
+const int motPin2=3;
+const int motPin3=4;
+const int motPin4=5;
+
+
 #define STEPS 64
 
 int mode=0;
@@ -28,6 +34,11 @@ void setup() {
   pinMode(button, INPUT);
   pinMode(button2,INPUT);
   pinMode(button3,INPUT);
+  pinMode(motPin1,OUTPUT);
+  pinMode(motPin2, OUTPUT);
+  pinMode(motPin3, OUTPUT);
+  pinMode(motPin4, OUTPUT);
+
   
   //initialize SD
   if (!SD.begin(10)) {
@@ -103,14 +114,10 @@ void standard(){          //Normal functionality
 void test1(){           //test procedure for sensor
   for(int i=0; i<4; i++){
       get_distance(i);
-      Serial.print("Distance ");
-      Serial.print(i+1);
-      Serial.print(" is ");
-      Serial.println(distances[i]);
       if(i<3){
         motor_rotate(i);
         Serial.println("Awaiting Button Push for Next State");
-        while(digitalRead(button2) == HIGH){
+        while(digitalRead(button2) == LOW){
         }     
       }   
   }
@@ -121,7 +128,7 @@ void test1(){           //test procedure for sensor
 void test2(){           //test procedure for motor
   long time1, time2, elapsedTime;
   for(int i=0; i<3; i++){
-    delay(7000000);
+    //delay(7000000);
     motor_rotate(i);
     elapsedTime=time2-time1;
     Serial.print("Elapsed Time for rotation cycle ");
@@ -130,7 +137,7 @@ void test2(){           //test procedure for motor
     Serial.print(elapsedTime);
     Serial.println(" Milliseconds");
     Serial.println("Awaiting Button Push for Next Cycle");
-    while(digitalRead(button3)==HIGH){
+    while(digitalRead(button3)==LOW){
     }
   }
   systems_clear();
@@ -160,12 +167,94 @@ void motor_reset(){
 
 void motor_rotate(int i){
   //YET TO IMPLEMENT
+  
   Stepper stepper(STEPS, 2,3,4,5);
   stepper.setSpeed(2);
   stepper.step(16);
   Serial.print("Motor Rotated to position ");
   Serial.println(i+1);
+  /*
+  digitalWrite(motPin1, LOW);
+  digitalWrite(motPin2, HIGH);
+  digitalWrite(motPin3, HIGH);
+  digitalWrite(motPin4, LOW);*/
+
+  /*
+  int _step=0;
+  boolean dir = true;
+   switch(_step){ 
+   case 0: 
+     digitalWrite(motPin1, LOW);  
+     digitalWrite(motPin2, LOW); 
+     digitalWrite(motPin3, LOW); 
+     digitalWrite(motPin4, HIGH); 
+   break;  
+   case 1: 
+     digitalWrite(motPin1, LOW);  
+     digitalWrite(motPin2, LOW); 
+     digitalWrite(motPin3, HIGH); 
+     digitalWrite(motPin4, HIGH); 
+   break;  
+   case 2: 
+     digitalWrite(motPin1, LOW);  
+     digitalWrite(motPin2, LOW); 
+     digitalWrite(motPin3, HIGH); 
+     digitalWrite(motPin4, LOW); 
+   break;  
+   case 3: 
+     digitalWrite(motPin1, LOW);  
+     digitalWrite(motPin2, HIGH); 
+     digitalWrite(motPin3, HIGH); 
+     digitalWrite(motPin4, LOW); 
+   break;  
+   case 4: 
+     digitalWrite(motPin1, LOW);  
+     digitalWrite(motPin2, HIGH); 
+     digitalWrite(motPin3, LOW); 
+     digitalWrite(motPin4, LOW); 
+   break;  
+   case 5: 
+     digitalWrite(motPin1, HIGH);  
+     digitalWrite(motPin2, HIGH); 
+     digitalWrite(motPin3, LOW); 
+     digitalWrite(motPin4, LOW); 
+   break;  
+     case 6: 
+     digitalWrite(motPin1, HIGH);  
+     digitalWrite(motPin2, LOW); 
+     digitalWrite(motPin3, LOW); 
+     digitalWrite(motPin4, LOW); 
+   break;  
+   case 7: 
+     digitalWrite(motPin1, HIGH);  
+     digitalWrite(motPin2, LOW); 
+     digitalWrite(motPin3, LOW); 
+     digitalWrite(motPin4, HIGH); 
+   break;  
+   default: 
+     digitalWrite(motPin1, LOW);  
+     digitalWrite(motPin2, LOW); 
+     digitalWrite(motPin3, LOW); 
+     digitalWrite(motPin4, LOW); 
+   break;  
+ } 
+ if(dir){ 
+   _step++; 
+ }else{ 
+   _step--; 
+ } 
+ if(_step>7){ 
+   _step=0; 
+ } 
+ if(_step<0){ 
+   _step=7; 
+ } 
+ delay(1); */
 }
+
+  
+
+
 
 void get_distance(int i){  //gets distance to object in cm
   long duration;
