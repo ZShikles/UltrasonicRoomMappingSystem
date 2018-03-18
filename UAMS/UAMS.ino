@@ -16,10 +16,17 @@ const int button=6;
 const int button2=7;
 const int button3=8;
 
-const int motPin1=2;
-const int motPin2=3;
-const int motPin3=4;
-const int motPin4=5;
+int bluePin = 2;    //IN1 on the ULN2003 Board, BLUE end of the Blue/Yellow motor coil
+int pinkPin = 3;    //IN2 on the ULN2003 Board, PINK end of the Pink/Orange motor coil
+int yellowPin = 4;  //IN3 on the ULN2003 Board, YELLOW end of the Blue/Yellow motor coil
+int orangePin = 5;  //IN4 on the ULN2003 Board, ORANGE end of the Pink/Orange motor coil
+
+//Keeps track of the current step.
+//We'll use a zero based index. 
+int currentStep = 0;
+int waveStepCount = 4;
+bool clockwise = true;
+
 
 
 #define STEPS 64
@@ -34,12 +41,22 @@ void setup() {
   pinMode(button, INPUT);
   pinMode(button2,INPUT);
   pinMode(button3,INPUT);
-  pinMode(motPin1,OUTPUT);
-  pinMode(motPin2, OUTPUT);
-  pinMode(motPin3, OUTPUT);
-  pinMode(motPin4, OUTPUT);
-
   
+   
+  pinMode(bluePin, OUTPUT);
+  pinMode(pinkPin, OUTPUT);
+  pinMode(yellowPin, OUTPUT);
+  pinMode(orangePin,OUTPUT);
+  
+  digitalWrite(bluePin, LOW);
+  digitalWrite(pinkPin, LOW);
+  digitalWrite(yellowPin, LOW);
+  digitalWrite(orangePin, LOW);
+
+  pinMode(pingECHO,INPUT); 
+  pinMode(pingTRIG, OUTPUT);
+
+ 
   //initialize SD
   if (!SD.begin(10)) {
     Serial.println(F("Card Failed, or Not Present"));
@@ -56,6 +73,7 @@ void setup() {
 }
 
 void loop() {
+  
   if(messageFlag==0){
      Serial.println("Awaiting Mode Selection");
      Serial.println("Button 1: Standard Operation");
@@ -158,98 +176,125 @@ void systems_clear(){ //empties arrays
 }
 
 void motor_reset(){
-  //YET TO IMPLEMENT
-  Stepper stepper(STEPS, 2,3,4,5);
-  stepper.setSpeed(2);
-  stepper.step(-64);
-  Serial.println("Motor position reset to position 1");
+ int targetSteps=1536;
+  while(1){
+    
+  int stepCount = waveStepCount;
+  
+  //Then we can figure out what our current step within the sequence from the overall current step
+  //and the number of steps in the sequence
+  int currentStepInSequence = currentStep % stepCount;
+  
+  //Figure out which step to use. If clock wise, it is the same is the current step
+  //if not clockwise, we fire them in the reverse order...
+  int directionStep = !clockwise ? currentStepInSequence : (stepCount-1) - currentStepInSequence;  
+  
+  switch(directionStep){
+    case 0:
+      digitalWrite(bluePin, HIGH);
+      digitalWrite(pinkPin, LOW);
+      digitalWrite(yellowPin, LOW);
+      digitalWrite(orangePin, LOW);
+      break;
+    case 1:
+      digitalWrite(bluePin, LOW);
+      digitalWrite(pinkPin, HIGH);
+      digitalWrite(yellowPin, LOW);
+      digitalWrite(orangePin, LOW);
+      break;
+    case 2:
+      digitalWrite(bluePin, LOW);
+      digitalWrite(pinkPin, LOW);
+      digitalWrite(yellowPin, HIGH);
+      digitalWrite(orangePin, LOW);
+      break;
+    case 3:
+      digitalWrite(bluePin, LOW);
+      digitalWrite(pinkPin, LOW);
+      digitalWrite(yellowPin, LOW);
+      digitalWrite(orangePin, HIGH);
+      break;
+  }
+  
+    // Increment the program field tracking the current step we are on
+  ++currentStep;
+  
+  // If targetSteps has been specified, and we have reached
+  // that number of steps, reset the currentStep, and reverse directions
+  if(targetSteps != 0 && currentStep == targetSteps){
+    currentStep = 0;
+    break;
+  } else if(targetSteps == 0 && currentStep == stepCount) {
+    // don't reverse direction, just reset the currentStep to 0
+    // resetting this will prevent currentStep from 
+    // eventually overflowing the int variable it is stored in.
+    currentStep = 0;
+  }
+  
+  delay(15);
+  }
+  
 }
 
 void motor_rotate(int i){
-  //YET TO IMPLEMENT
+  int targetSteps=512;
+  while(1){
+    
+  int stepCount = waveStepCount;
   
-  Stepper stepper(STEPS, 2,3,4,5);
-  stepper.setSpeed(2);
-  stepper.step(16);
-  Serial.print("Motor Rotated to position ");
-  Serial.println(i+1);
-  /*
-  digitalWrite(motPin1, LOW);
-  digitalWrite(motPin2, HIGH);
-  digitalWrite(motPin3, HIGH);
-  digitalWrite(motPin4, LOW);*/
-
-  /*
-  int _step=0;
-  boolean dir = true;
-   switch(_step){ 
-   case 0: 
-     digitalWrite(motPin1, LOW);  
-     digitalWrite(motPin2, LOW); 
-     digitalWrite(motPin3, LOW); 
-     digitalWrite(motPin4, HIGH); 
-   break;  
-   case 1: 
-     digitalWrite(motPin1, LOW);  
-     digitalWrite(motPin2, LOW); 
-     digitalWrite(motPin3, HIGH); 
-     digitalWrite(motPin4, HIGH); 
-   break;  
-   case 2: 
-     digitalWrite(motPin1, LOW);  
-     digitalWrite(motPin2, LOW); 
-     digitalWrite(motPin3, HIGH); 
-     digitalWrite(motPin4, LOW); 
-   break;  
-   case 3: 
-     digitalWrite(motPin1, LOW);  
-     digitalWrite(motPin2, HIGH); 
-     digitalWrite(motPin3, HIGH); 
-     digitalWrite(motPin4, LOW); 
-   break;  
-   case 4: 
-     digitalWrite(motPin1, LOW);  
-     digitalWrite(motPin2, HIGH); 
-     digitalWrite(motPin3, LOW); 
-     digitalWrite(motPin4, LOW); 
-   break;  
-   case 5: 
-     digitalWrite(motPin1, HIGH);  
-     digitalWrite(motPin2, HIGH); 
-     digitalWrite(motPin3, LOW); 
-     digitalWrite(motPin4, LOW); 
-   break;  
-     case 6: 
-     digitalWrite(motPin1, HIGH);  
-     digitalWrite(motPin2, LOW); 
-     digitalWrite(motPin3, LOW); 
-     digitalWrite(motPin4, LOW); 
-   break;  
-   case 7: 
-     digitalWrite(motPin1, HIGH);  
-     digitalWrite(motPin2, LOW); 
-     digitalWrite(motPin3, LOW); 
-     digitalWrite(motPin4, HIGH); 
-   break;  
-   default: 
-     digitalWrite(motPin1, LOW);  
-     digitalWrite(motPin2, LOW); 
-     digitalWrite(motPin3, LOW); 
-     digitalWrite(motPin4, LOW); 
-   break;  
- } 
- if(dir){ 
-   _step++; 
- }else{ 
-   _step--; 
- } 
- if(_step>7){ 
-   _step=0; 
- } 
- if(_step<0){ 
-   _step=7; 
- } 
- delay(1); */
+  //Then we can figure out what our current step within the sequence from the overall current step
+  //and the number of steps in the sequence
+  int currentStepInSequence = currentStep % stepCount;
+  
+  //Figure out which step to use. If clock wise, it is the same is the current step
+  //if not clockwise, we fire them in the reverse order...
+  int directionStep = clockwise ? currentStepInSequence : (stepCount-1) - currentStepInSequence;  
+  
+  switch(directionStep){
+    case 0:
+      digitalWrite(bluePin, HIGH);
+      digitalWrite(pinkPin, LOW);
+      digitalWrite(yellowPin, LOW);
+      digitalWrite(orangePin, LOW);
+      break;
+    case 1:
+      digitalWrite(bluePin, LOW);
+      digitalWrite(pinkPin, HIGH);
+      digitalWrite(yellowPin, LOW);
+      digitalWrite(orangePin, LOW);
+      break;
+    case 2:
+      digitalWrite(bluePin, LOW);
+      digitalWrite(pinkPin, LOW);
+      digitalWrite(yellowPin, HIGH);
+      digitalWrite(orangePin, LOW);
+      break;
+    case 3:
+      digitalWrite(bluePin, LOW);
+      digitalWrite(pinkPin, LOW);
+      digitalWrite(yellowPin, LOW);
+      digitalWrite(orangePin, HIGH);
+      break;
+  }
+  
+    // Increment the program field tracking the current step we are on
+  ++currentStep;
+  
+  // If targetSteps has been specified, and we have reached
+  // that number of steps, reset the currentStep, and reverse directions
+  if(targetSteps != 0 && currentStep == targetSteps){
+    currentStep = 0;
+    break;
+  } else if(targetSteps == 0 && currentStep == stepCount) {
+    // don't reverse direction, just reset the currentStep to 0
+    // resetting this will prevent currentStep from 
+    // eventually overflowing the int variable it is stored in.
+    currentStep = 0;
+  }
+  
+  delay(15);
+  }
+  
 }
 
   
@@ -260,17 +305,15 @@ void get_distance(int i){  //gets distance to object in cm
   long duration;
   
   //Sends request to sensor
-  pinMode(pingTRIG, OUTPUT);
   digitalWrite(pingTRIG, LOW);
   delayMicroseconds(2);
   digitalWrite(pingTRIG, HIGH);
-  delayMicroseconds(10);
+  delayMicroseconds(15);
   digitalWrite(pingTRIG, LOW);
 
-  pinMode(pingECHO,INPUT); 
   duration = pulseIn(pingECHO,HIGH); //recieves return signal, calculates elapsed time
-  distances[i] = duration / 29 / 2;  //converts elapsed time to cm
-
+  distances[i] = duration;// / 29 / 2;  //converts elapsed time to cm
+  delay(2000);
   Serial.print("Distance ");
   Serial.print(i+1);
   Serial.print(" is ");
@@ -290,7 +333,8 @@ void sd_write(){
   // if the file opened okay, write to it:
   if (myFile) {
     Serial.print("Writing to DataLog.csv...");
-
+    myFile.println();
+    myFile.println();
     //writes areas to file
     for(int i=0; i<3; i++){
       myFile.print(areas[i]);
